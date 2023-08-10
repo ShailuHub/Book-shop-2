@@ -9,6 +9,8 @@ const app = express();
 
 const Product = require("./models/product");
 const User = require("./models/user");
+const Cart = require("./models/cart");
+const ProductCart = require("./models/product-cart");
 
 app.set("view engine", "ejs");
 app.set("views", "views");
@@ -35,10 +37,18 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
+//All Association
 Product.belongsTo(User, { constraints: true, onDelete: "CASCADE" });
 User.hasMany(Product);
 
+User.hasOne(Cart);
+Cart.belongsTo(User);
+
+Cart.belongsToMany(Product, { through: ProductCart });
+Product.belongsToMany(Cart, { through: ProductCart });
+
 sequelize
+  //.sync({ force: true })
   .sync()
   .then((result) => {
     return User.findOne({ where: { id: 1 } });
@@ -50,10 +60,12 @@ sequelize
         email: "shailesh.respond@gmail.com",
       });
     }
-    return User;
+    return user;
   })
   .then((user) => {
-    console.log(user);
+    return user.createCart();
+  })
+  .then((cart) => {
     app.listen(3000, () => {
       console.log("Server is working on the port 3000");
     });
